@@ -205,7 +205,7 @@ public class DrowsyDetector extends Activity {
             	//System.out.println("Prev Val:" + prevValue);
             	float diffAbs = Math.abs(diff);
             	//System.out.println("absolute difference: " + diffAbs);
-            	boolean jerked = diffAbs >= 15 && diffAbs <= 70;
+            	boolean jerked = diffAbs >= 15 && diffAbs <= 50;
             	//System.out.println("jerked?: " + jerked);
             	//System.out.println("hasJerked?: " + hasJerked);            	
             	//System.out.println("diff<0 != jerkNeg?" + (diff < 0 != jerkNeg));
