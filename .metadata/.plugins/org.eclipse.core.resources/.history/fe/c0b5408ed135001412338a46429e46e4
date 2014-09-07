@@ -1,0 +1,226 @@
+package com.openxc.enabler;
+
+import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.media.MediaPlayer;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.openxc.VehicleManager;
+import com.openxc.measurements.AcceleratorPedalPosition;
+import com.openxc.measurements.BrakePedalStatus;
+import com.openxc.measurements.Measurement;
+import com.openxc.measurements.SteeringWheelAngle;
+import com.openxc.measurements.UnrecognizedMeasurementTypeException;
+import com.openxc.remote.VehicleServiceException;
+import com.openxc.units.Degree;
+
+
+
+public class DrowsyDetector extends Activity {
+
+    private static String TAG = "VehicleDashboard";
+
+    private VehicleManager mVehicleManager;
+    private boolean mIsBound;
+    private final Handler mHandler = new Handler();
+
+    private TextView mSteeringWheelAngleView;
+    private TextView mVehicleBrakeStatusView;
+    private TextView mAcceleratorPedalPositionView;
+
+    private SteeringWheelAngle prevAngle = null;
+    private boolean hasJerked = false;
+    private boolean jerkNeg;
+    
+    public void playTone(final Context context) {
+    	Thread t = new Thread(){
+            public void run(){
+            	Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                MediaPlayer player = null;
+                int countBeep = 0;
+                while(countBeep<2){
+                player = MediaPlayer.create(context,soundUri);
+                player.start();
+                countBeep+=1;
+                try {
+
+                                // 100 milisecond is duration gap between two beep
+                    Thread.sleep(player.getDuration()+100);
+                                       player.release();
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                }
+            }
+        };
+        t.start();   
+    }
+    
+    BrakePedalStatus.Listener mBrakePedalStatus =
+            new BrakePedalStatus.Listener() {
+        public void receive(Measurement measurement) {
+            final BrakePedalStatus status = (BrakePedalStatus) measurement;
+            mHandler.post(new Runnable() {
+                public void run() {
+                    mVehicleBrakeStatusView.setText(status.toString());
+                }
+            });
+        }
+    };
+
+    AcceleratorPedalPosition.Listener mAcceleratorPedalPosition =
+            new AcceleratorPedalPosition.Listener() {
+        public void receive(Measurement measurement) {
+            final AcceleratorPedalPosition status =
+                (AcceleratorPedalPosition) measurement;
+            mHandler.post(new Runnable() {
+                public void run() {
+                    mAcceleratorPedalPositionView.setText(status.toString());
+                }
+            });
+        }
+    };
+
+
+    SteeringWheelAngle.Listener mSteeringWheelListener =
+            new SteeringWheelAngle.Listener() {
+        public void receive(Measurement measurement) {
+            final SteeringWheelAngle angle = (SteeringWheelAngle) measurement;
+            
+            if(prevAngle == null)
+            	prevAngle = angle;
+            else {
+            	hasJerked=false;
+            	float prevValue = Float.parseFloat(prevAngle.toString().substring(0,prevAngle.toString().length()-1));
+            	float currentValue = Float.parseFloat(angle.toString().substring(0,angle.toString().length()-1));
+            	float diff = currentValue - prevValue;
+            	System.out.println("Current Val:" + currentValue);
+            	System.out.println("Prev Val:" + prevValue);
+            	float diffAbs = Math.abs(diff);
+            	System.out.println("absolute difference: " + diffAbs);
+            	if(diffAbs >= 15 && diffAbs <= 30) {
+            		System.out.println("DROWSY ALERT");
+            		hasJerked = true;
+            		if(diff < 0)
+            			jerkNeg = true;
+            		else
+            			jerkNeg = false;
+            	} else {
+            		System.out.println("no jerk.");
+            	}
+            	prevAngle = angle;
+            }
+            
+            
+            
+            mHandler.post(new Runnable() {
+                public void run() {
+                	if(hasJerked) {
+                    	Toast.makeText(getApplicationContext(), "LOUD NOISES", Toast.LENGTH_SHORT).show();
+                    	playTone(getApplicationContext());
+                    	System.out.println("LOUD NOISES");
+                    }
+                    mSteeringWheelAngleView.setText(angle.toString());
+                }
+            });
+        }
+    };
+    
+    
+   private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className,
+                IBinder service) {
+            Log.i(TAG, "Bound to VehicleManager");
+            mVehicleManager = ((VehicleManager.VehicleBinder)service
+                    ).getService();
+
+            try {
+                mVehicleManager.addListener(SteeringWheelAngle.class,
+                        mSteeringWheelListener);
+                mVehicleManager.addListener(BrakePedalStatus.class,
+                        mBrakePedalStatus);
+          //      mVehicleManager.addListener(Longitude.class,
+          //      		mLongAccelListener);
+            } catch(VehicleServiceException e) {
+                Log.w(TAG, "Couldn't add listeners for measurements", e);
+            } catch(UnrecognizedMeasurementTypeException e) {
+                Log.w(TAG, "Couldn't add listeners for measurements", e);
+            }
+            mIsBound = true;
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            Log.w(TAG, "VehicleService disconnected unexpectedly");
+            mVehicleManager = null;
+            mIsBound = false;
+        }
+    };
+
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.vehicle_dashboard);
+        Log.i(TAG, "Vehicle dashboard created");
+
+
+        mSteeringWheelAngleView = (TextView) findViewById(
+                R.id.steering_wheel_angle);
+        mVehicleBrakeStatusView = (TextView) findViewById(
+                R.id.brake_pedal_status_label);
+        mAcceleratorPedalPositionView = (TextView) findViewById(
+                R.id.accelerator_pedal_position_label);
+      //  mLongAccelView = (TextView) findViewById(
+      //          R.id.android_long_Accel); 
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        bindService(new Intent(this, VehicleManager.class),
+                mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if(mIsBound) {
+            Log.i(TAG, "Unbinding from vehicle service");
+            unbindService(mConnection);
+            mIsBound = false;
+        }
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case R.id.settings:
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main, menu);
+        return true;
+    }
+}

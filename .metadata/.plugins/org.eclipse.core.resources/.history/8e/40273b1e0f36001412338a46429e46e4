@@ -1,0 +1,13 @@
+package com.openxc.enabler;
+
+
+import android.app.Activity;
+
+public class RedActivity extends Activity {
+	
+	setContentView(R.layout.main);
+	View someView = findViewById(R.id.randomViewInMainLayout);
+	View root = someView.getRootView();
+	root.setBackgroundColor("red");
+	
+}

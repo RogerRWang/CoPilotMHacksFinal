@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ScrollView01"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:fillViewport="true">
+
+    <TableLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="2dp" >
+
+        <TableRow style="@style/ItemRow">
+            <TextView
+                android:id="@+id/steering_wheel_angle_label"
+                style="@style/ItemLabel"
+                android:text="@string/steering_wheel_angle_label" />
+            <TextView
+                android:id="@+id/steering_wheel_angle"
+                style="@style/ItemData" />
+            
+            <TextView
+                android:id="@+id/turn_signal_position_label"
+                style="@style/ItemLabel"
+                android:text="@string/turn_signal_position_label" />
+            <TextView
+                android:id="@+id/turn_signal_position"
+                style="@style/ItemData" />
+        </TableRow>
+        
+
+    </TableLayout>
+
+</ScrollView>

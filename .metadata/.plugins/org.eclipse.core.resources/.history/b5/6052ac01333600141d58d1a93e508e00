@@ -1,0 +1,93 @@
+package com.example.helloworld;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Bundle;
+import android.provider.MediaStore;
+import android.support.v7.app.ActionBarActivity;
+import android.view.Menu;
+import android.view.MenuItem;
+
+public class MainActivity extends ActionBarActivity {
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		//SongsManager s = new SongsManager(getApplicationContext());
+		//System.out.println(s.songsList.toString());
+		//System.out.println(s.MEDIA_PATH);
+		//ContentResolver musicResolver = getContentResolver();
+		//Uri musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+		//System.out.println(musicUri);
+		/*Cursor musicCursor = musicResolver.query(musicUri, null, null,null,null);
+		ArrayList<String> ids = new ArrayList<String>();
+		do {
+			if(musicCursor!= null && musicCursor.moveToFirst()) {
+				ids.add(android.provider.MediaStore.Audio.Media._ID);
+			}
+		} while(musicCursor.moveToNext());*/
+		ArrayList<HashMap<String, String>> s = getPlayList(getApplicationContext());
+		System.out.println(s.get(0).get("songTitle"));
+	}
+	
+	public ArrayList<HashMap<String, String>> getPlayList(Context c) {
+
+
+		ArrayList<HashMap<String, String>> songsList = new ArrayList<HashMap<String, String>>();
+	    /*use content provider to get beginning of database query that queries for all audio by display name, path
+	    and mimtype which i dont use but got it incase you want to scan for mp3 files only you can compare with RFC  mimetype for mp3's
+	    */
+	    final Cursor mCursor = c.getContentResolver().query(
+	            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+	            new String[] { MediaStore.Audio.Media.DISPLAY_NAME, MediaStore.Audio.Media.DATA,MediaStore.Audio.Media.MIME_TYPE }, null, null,
+	            "LOWER(" + MediaStore.Audio.Media.TITLE + ") ASC");
+
+	    String songs_name = "";
+	    String mAudioPath = "";
+
+	    /* run through all the columns we got back and save the data we need into the arraylist for our listview*/
+	    if (mCursor.moveToFirst()) {
+	        do {
+
+	        String file_type = mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE));
+
+
+	            songs_name = mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME));
+	            mAudioPath = mCursor.getString(mCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
+	            HashMap<String, String> song = new HashMap<String, String>();
+
+	            song.put("songTitle", songs_name);
+	            song.put("songPath", mAudioPath);
+
+	            songsList.add(song);
+
+	        } while (mCursor.moveToNext());
+	    }
+	    return songsList;
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle action bar item clicks here. The action bar will
+		// automatically handle clicks on the Home/Up button, so long
+		// as you specify a parent activity in AndroidManifest.xml.
+		int id = item.getItemId();
+		if (id == R.id.action_settings) {
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+}

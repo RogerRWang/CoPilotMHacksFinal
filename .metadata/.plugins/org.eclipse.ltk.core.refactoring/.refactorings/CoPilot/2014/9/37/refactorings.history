@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy element &apos;SongsManager.java&apos; to &apos;HelloWorld/src/com.example.helloworld&apos;&#x0D;&#x0A;- Original project: &apos;CoPilot&apos;&#x0D;&#x0A;- Destination element: &apos;HelloWorld/src/com.example.helloworld&apos;&#x0D;&#x0A;- Original element: &apos;com.openxc.enabler.SongsManager.java&apos;" description="Copy compilation unit" destination="=HelloWorld/src&lt;com.example.helloworld" element1="/src&lt;com.openxc.enabler{SongsManager.java" files="0" flags="589830" folders="0" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyResources" stamp="1410052474198" units="1" version="1.0"/>
+</session>
